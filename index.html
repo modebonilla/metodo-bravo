@@ -20,6 +20,28 @@ body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;o
 /* SVG ICON SYSTEM */
 .ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 
+/* HERO BG EFFECTS - 100% CSS guaranteed */
+.hero-lines{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 40px,
+    rgba(255,255,255,0.018) 40px,
+    rgba(255,255,255,0.018) 41px
+  );
+}
+.hero-dots{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:radial-gradient(circle,rgba(255,255,255,0.12) 1px,transparent 1px);
+  background-size:40px 40px;
+  animation:dotsFade 6s ease-in-out infinite;
+}
+@keyframes dotsFade{0%,100%{opacity:0.4}50%{opacity:1}}
+.hero-scanline{position:absolute;left:0;right:0;height:120px;z-index:1;pointer-events:none;
+  background:linear-gradient(to bottom,transparent,rgba(204,0,0,0.04),transparent);
+  animation:scanMove 8s linear infinite;
+}
+@keyframes scanMove{0%{top:-120px}100%{top:110%}}
+
 /* SCROLL PROGRESS */
 #prog{position:fixed;top:0;left:0;height:2px;background:var(--red);z-index:1000;width:0%;transition:width .08s linear;pointer-events:none}
 
@@ -39,13 +61,13 @@ body{background:var(--black);color:var(--white);font-family:'Inter',sans-serif;o
 .btn-nav:hover{background:var(--red2)}
 
 /* HERO */
-#hero{position:relative;min-height:100svh;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:100px 28px 60px;overflow:hidden}
+#hero{position:relative;min-height:100svh;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:100px 28px 60px;overflow:hidden;isolation:isolate}
 @media(min-width:768px){#hero{padding:120px 60px 80px}}
-#hero-canvas{position:absolute;inset:0;z-index:0}
-.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:60px 60px;z-index:1;pointer-events:none}
-.hero-glow{position:absolute;top:10%;right:-5%;width:min(500px,90vw);height:min(500px,90vw);background:radial-gradient(circle,rgba(204,0,0,0.1) 0%,transparent 70%);z-index:1;pointer-events:none;animation:gp 5s ease-in-out infinite}
-@keyframes gp{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.hero-content{position:relative;z-index:2;max-width:800px;width:100%}
+
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:60px 60px;z-index:2;pointer-events:none}
+.hero-glow{position:absolute;top:10%;right:-5%;width:min(500px,90vw);height:min(500px,90vw);background:radial-gradient(circle,rgba(204,0,0,0.22) 0%,transparent 70%);z-index:2;pointer-events:none;animation:gp 5s ease-in-out infinite}
+@keyframes gp{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.hero-content{position:relative;z-index:3;max-width:800px;width:100%}
 .ticker{display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;animation:fu .8s .2s both}
 .ticker-dot{width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1.5s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
@@ -602,7 +624,9 @@ footer{background:var(--s1);border-top:1px solid var(--border);padding:40px 28px
 
 <!-- HERO -->
 <section id="hero">
-  <canvas id="hero-canvas"></canvas>
+  <div class="hero-lines"></div>
+  <div class="hero-dots"></div>
+  <div class="hero-scanline"></div>
   <div class="hero-grid"></div>
   <div class="hero-glow"></div>
   <div class="hero-content">
@@ -1286,37 +1310,7 @@ function animCounter(el){
 const co=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting&&!e.target.dataset.done){e.target.dataset.done='1';animCounter(e.target)}})},{threshold:.5});
 document.querySelectorAll('.counter').forEach(el=>co.observe(el));
 
-/* HERO CANVAS */
-const canvas=document.getElementById('hero-canvas');
-const ctx=canvas.getContext('2d');
-let W,H,pts=[];
-function resize(){W=canvas.width=window.innerWidth;H=canvas.height=Math.max(window.innerHeight,600);}
-resize();
-window.addEventListener('resize',()=>{resize();init()},{passive:true});
-class Pt{
-  constructor(){this.reset();}
-  reset(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.35;this.vy=(Math.random()-.5)*.35;this.r=Math.random()*1.2+.2;this.a=Math.random()*.4+.05;this.red=Math.random()<.12;}
-  tick(){this.x+=this.vx;this.y+=this.vy;if(this.x<0||this.x>W||this.y<0||this.y>H)this.reset();}
-  draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.red?`rgba(204,0,0,${this.a})`:`rgba(255,255,255,${this.a*.4})`;ctx.fill();}
-}
-function init(){pts=[];const n=window.innerWidth<600?60:100;for(let i=0;i<n;i++)pts.push(new Pt());}
-let mx=-999,my=-999;
-window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY},{passive:true});
-window.addEventListener('touchmove',e=>{if(e.touches[0]){mx=e.touches[0].clientX;my=e.touches[0].clientY}},{passive:true});
-function loop(){
-  ctx.clearRect(0,0,W,H);
-  for(let i=0;i<pts.length;i++){
-    const p=pts[i],dx=p.x-mx,dy=p.y-my,d=Math.sqrt(dx*dx+dy*dy);
-    if(d<120&&d>0){p.x+=dx/d*.5;p.y+=dy/d*.5;}
-    p.tick();p.draw();
-    for(let j=i+1;j<pts.length;j++){
-      const q=pts[j],ex=p.x-q.x,ey=p.y-q.y,ed=Math.sqrt(ex*ex+ey*ey);
-      if(ed<110){ctx.beginPath();ctx.strokeStyle=`rgba(204,0,0,${(1-ed/110)*.07})`;ctx.lineWidth=.5;ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();}
-    }
-  }
-  requestAnimationFrame(loop);
-}
-init();loop();
+
 
 /* CAROUSEL with drag & touch */
 const cw=document.getElementById('cw');
