@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D0D0D">
+<title>Bravo — Diagnóstico Estratégico</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D0D;--bg2:#141414;--bg3:#1c1c1c;
+  --border:#252525;--border-h:#333;
+  --red:#FF0000;--red-dim:rgba(255,0,0,0.07);--red-glow:rgba(255,0,0,0.18);--red-b:rgba(255,0,0,0.22);
+  --text:#F2F2F2;--muted:#666;--sub:#999;--sub2:#bbb;
+  --r:9px;--t:0.16s ease;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* HEADER */
+.hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;background:rgba(13,13,13,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.lmark{width:26px;height:26px;background:var(--red);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.lmark svg{width:13px;height:13px;fill:#fff}
+.ltxt{font-size:13px;font-weight:900;letter-spacing:.1em;color:var(--text);text-transform:uppercase}
+.ltxt b{color:var(--red)}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.hdr-s{font-size:11px;color:var(--muted);font-weight:600}
+.hdr-p{font-size:11px;color:var(--red);font-weight:700}
+
+/* PROGRESS */
+.prog{position:fixed;top:54px;left:0;right:0;z-index:99;height:2px;background:var(--border)}
+.pb{height:100%;background:var(--red);transition:width .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px var(--red-glow)}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(100px);background:#1c1c1c;border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:13px;color:var(--text);z-index:300;transition:transform .25s ease;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--red);color:#ff7777}
+
+/* INTRO */
+.intro{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:76px 20px 56px;max-width:620px;margin:0 auto}
+.itag{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:18px}
+.idot{width:5px;height:5px;background:var(--red);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.ihead{font-size:clamp(26px,8vw,46px);font-weight:900;line-height:1.08;letter-spacing:-.02em;margin-bottom:14px}
+.ihead em{font-style:normal;color:var(--red)}
+.ibox{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:26px;font-size:13px;color:var(--sub2);line-height:1.75}
+.ibox strong{color:var(--text)}
+.imeta{display:flex;gap:22px;margin-bottom:30px;flex-wrap:wrap}
+.imet-n{font-size:20px;font-weight:800}
+.imet-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.btn-start{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;border:none;border-radius:var(--r);padding:13px 30px;font-family:'Inter',sans-serif;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;transition:all var(--t)}
+.btn-start:hover{background:#cc0000;box-shadow:0 6px 24px rgba(255,0,0,.28);transform:translateY(-1px)}
+
+/* MAIN */
+.main{display:none;padding:76px 20px 80px;max-width:620px;margin:0 auto}
+
+/* STEP */
+.step{display:none;animation:fadeUp .26s ease}
+.step.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.s-eye{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:7px}
+.s-title{font-size:clamp(18px,5vw,24px);font-weight:800;line-height:1.2;margin-bottom:6px}
+.s-desc{font-size:13px;color:var(--sub);margin-bottom:26px;line-height:1.7}
+
+/* FIELDS */
+.fg{display:flex;flex-direction:column;gap:18px;margin-bottom:30px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field>label,.field>.lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--sub)}
+.req{color:var(--red)}
+.otag{font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:5px;padding:1px 6px;border:1px solid var(--border);border-radius:20px}
+.micro{font-size:12px;color:var(--muted);line-height:1.55;margin-top:2px}
+.fex{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
+
+input[type=text],input[type=tel],input[type=email],input[type=url],textarea,select{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;padding:11px 13px;outline:none;transition:border-color var(--t),background var(--t),box-shadow var(--t);width:100%;-webkit-appearance:none;appearance:none}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+input:focus,textarea:focus,select:focus{border-color:var(--red);background:var(--bg3);box-shadow:0 0 0 3px var(--red-dim)}
+textarea{resize:vertical;min-height:80px;line-height:1.65}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* NUMBERED FIELDS */
+.nf{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.nrow{display:flex;align-items:flex-start;gap:8px}
+.nnum{font-size:11px;font-weight:700;color:var(--muted);width:16px;flex-shrink:0;padding-top:13px;text-align:right}
+.nrow input,.nrow textarea{flex:1}
+
+/* OPTION GRID — fixed click handling */
+.og{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px}
+.og.c2{grid-template-columns:1fr 1fr}
+.og.c3{grid-template-columns:repeat(3,1fr)}
+.og.c4{grid-template-columns:repeat(4,1fr)}
+
+.olab{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--sub);background:var(--bg2);transition:all var(--t);user-select:none;line-height:1.3}
+.olab:hover{border-color:var(--border-h);color:var(--text)}
+.olab.sel{border-color:var(--red)!important;background:var(--red-dim)!important;color:var(--text)!important;box-shadow:0 0 0 1px var(--red)!important}
+.ochk{width:14px;height:14px;border:1.5px solid var(--border-h);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all var(--t);pointer-events:none}
+.olab.sel .ochk{background:var(--red);border-color:var(--red)}
+.ochk svg{width:8px;height:8px;opacity:0;transition:opacity var(--t);pointer-events:none}
+.olab.sel .ochk svg{opacity:1}
+
+/* DIVIDER */
+.div{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+.div-l{flex:1;height:1px;background:var(--border)}
+.div-t{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;white-space:nowrap}
+
+/* WARN BOX */
+.warn{background:rgba(255,0,0,.04);border:1px solid rgba(255,0,0,.15);border-radius:var(--r);padding:13px 15px;font-size:13px;color:var(--sub2);line-height:1.65;margin-bottom:2px}
+.warn strong{color:var(--red)}
+.warn ul{margin:7px 0 0 16px;display:flex;flex-direction:column;gap:2px}
+
+/* SECTION TAG */
+.stag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;margin-bottom:14px}
+
+/* NAV */
+.snav{display:flex;gap:9px;align-items:center}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--sub);border-radius:var(--r);padding:11px 18px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all var(--t);flex-shrink:0}
+.btn-back:hover{border-color:var(--border-h);color:var(--text)}
+.btn-next{background:var(--red);border:none;color:#fff;border-radius:var(--r);padding:11px 26px;font-family:'Inter',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all var(--t);letter-spacing:.04em;text-transform:uppercase;flex:1}
+.btn-next:hover{background:#cc0000;box-shadow:0 4px 16px rgba(255,0,0,.24)}
+.btn-next:active{transform:scale(.98)}
+.btn-next.loading{pointer-events:none;opacity:.6}
+
+/* SUCCESS */
+.success{display:none;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:76px 22px;animation:fadeUp .4s ease}
+.success.active{display:flex}
+.sico{width:64px;height:64px;background:var(--red-dim);border:1px solid var(--red-b);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 22px}
+.sico svg{width:26px;height:26px;stroke:var(--red);fill:none;stroke-width:2.5}
+.stt{font-size:24px;font-weight:800;margin-bottom:9px}
+.ssb{font-size:14px;color:var(--sub);max-width:380px;line-height:1.75;margin-bottom:20px}
+.btn-pdf{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;border:none;border-radius:var(--r);padding:13px 28px;font-family:'Inter',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all var(--t);text-transform:uppercase;letter-spacing:.05em}
+.btn-pdf:hover{background:#cc0000;box-shadow:0 6px 22px rgba(255,0,0,.28)}
+.scls{font-size:12px;color:var(--muted);margin-top:18px;max-width:340px;line-height:1.6;font-style:italic}
+
+@media(max-width:500px){
+  .og.c3,.og.c4{grid-template-columns:1fr 1fr}
+  .row2{grid-template-columns:1fr}
+  .snav{flex-wrap:wrap}
+  .btn-next{order:-1;flex-basis:100%}
+  .btn-back{flex:1}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a class="logo" href="#">
+    <div class="lmark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <span class="ltxt">BRAVO<b>.</b></span>
+  </a>
+  <div class="hdr-r">
+    <span class="hdr-s" id="hdrS">Diagnóstico Estratégico</span>
+    <span class="hdr-p" id="hdrP"></span>
+  </div>
+</header>
+<div class="prog"><div class="pb" id="pb" style="width:0%"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- ═══════ INTRO ═══════ -->
+<div class="intro" id="introScreen">
+  <span class="itag"><span class="idot"></span>Bravo Agencia — Onboarding Estratégico</span>
+  <h1 class="ihead">Tu negocio,<br><em>sin filtros.</em></h1>
+  <div class="ibox">
+    <strong>Este formulario nos ayudará a entender mejor tu empresa, tus productos o servicios, tus clientes, tus diferenciadores y tus objetivos comerciales.</strong><br><br>
+    Mientras más claras sean tus respuestas, mejor podremos construir una estrategia de marketing, contenido y comunicación enfocada en atraer mejores prospectos y generar mejores resultados.
+  </div>
+  <div class="imeta">
+    <div><div class="imet-n">11</div><div class="imet-l">Secciones</div></div>
+    <div><div class="imet-n">~20</div><div class="imet-l">Minutos</div></div>
+    <div><div class="imet-n">100%</div><div class="imet-l">Confidencial</div></div>
+  </div>
+  <button class="btn-start" onclick="startForm()">
+    Comenzar diagnóstico
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  </button>
+</div>
+
+<!-- ═══════ FORM ═══════ -->
+<main class="main" id="formMain">
+
+<!-- ── 1: INFO GENERAL ── -->
+<div class="step active" id="step-1">
+  <p class="s-eye">1 de 11 — Información general</p>
+  <h2 class="s-title">La empresa</h2>
+  <p class="s-desc">Empezamos con lo esencial para entender quién eres y a qué te dedicas.</p>
+  <div class="fg">
+    <div class="field"><label>Nombre de la empresa, negocio o marca <span class="req">*</span></label>
+      <input type="text" id="f_brand" placeholder="Ej. Estética Glam / Clínica Dr. Ramírez"></div>
+    <div class="field"><label>Nombre del fundador, dueño o rostro principal <span class="req">*</span></label>
+      <input type="text" id="f_founder" placeholder="Ej. María González">
+      <span class="micro">Si es marca personal, escribe el nombre de quien representa la marca.</span></div>
+    <div class="field"><label>Años de antigüedad o trayectoria <span class="req">*</span></label>
+      <input type="text" id="f_years" placeholder="Ej. 5 años / desde 2018 / más de 10 años"></div>
+    <div class="field"><label>¿Cuántos clientes, pacientes, alumnos o empresas han atendido en total? <span class="req">*</span></label>
+      <input type="text" id="f_clients" placeholder="Ej. Más de 300 clientes / ~80 pacientes al mes">
+      <span class="micro">No tiene que ser exacto. Un aproximado está bien.</span></div>
+    <div class="field"><label>¿En qué le ayuda tu empresa, producto o servicio a las personas? <span class="req">*</span></label>
+      <textarea id="f_value" placeholder="Completa: Ayudamos a _______ a lograr _______ por medio de _______." rows="3"></textarea>
+      <span class="fex">Ej. "Ayudamos a empresas a aumentar sus ventas con estrategias en redes sociales."</span></div>
+    <div class="field"><label>WhatsApp principal de contacto <span class="req">*</span></label>
+      <input type="tel" id="f_wa" placeholder="+52 55 1234 5678"></div>
+    <div class="field"><label>Dirección, ubicación o zona de atención <span class="opt">opcional</span></label>
+      <textarea id="f_loc" placeholder="Ciudad, colonia, zona de cobertura o si atienden en línea." rows="2"></textarea></div>
+    <div class="field"><label>Redes sociales principales <span class="otag">opcional</span></label>
+      <textarea id="f_social" placeholder="Instagram, Facebook, TikTok, sitio web..." rows="2"></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-next" onclick="goNext(1)">Siguiente →</button></div>
+</div>
+
+<!-- ── 2: DIFERENCIACIÓN GENERAL ── -->
+<div class="step" id="step-2">
+  <p class="s-eye">2 de 11 — Diferenciación general</p>
+  <h2 class="s-title">¿Por qué contigo y no con otro?</h2>
+  <p class="s-desc">La sección más importante y más difícil de contestar bien. Sé específico.</p>
+  <div class="fg">
+    <div class="field">
+      <label>¿Por qué alguien debería comprarte a ti y no a la competencia? <span class="req">*</span></label>
+      <div class="warn"><strong>Evita respuestas genéricas:</strong>
+        <ul><li>Buena atención / Calidad / Buen servicio</li><li>Profesionalismo / Buenos precios / Productos de calidad</li></ul><br>
+        Queremos razones <strong>específicas y reales</strong> que la competencia no pueda decir igual.</div>
+      <textarea id="f_why" placeholder="Explica qué hace diferente a tu empresa: proceso, tecnología, resultados, garantía, especialización..." rows="4"></textarea></div>
+    <div class="field">
+      <label>Tus 6 diferenciadores reales <span class="req">*</span></label>
+      <span class="micro">Los primeros 3 son obligatorios. Ej: método propio, garantía, especialización en un nicho, resultados medibles, tecnología especial, acompañamiento posventa...</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="d1" placeholder="Diferenciador 1 *"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="d2" placeholder="Diferenciador 2 *"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="d3" placeholder="Diferenciador 3 *"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="d4" placeholder="Diferenciador 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="d5" placeholder="Diferenciador 5 (opcional)"></div>
+        <div class="nrow"><span class="nnum">6</span><input type="text" id="d6" placeholder="Diferenciador 6 (opcional)"></div>
+      </div>
+    </div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(2)">← Atrás</button><button class="btn-next" onclick="goNext(2)">Siguiente →</button></div>
+</div>
+
+<!-- ── 3: TOP 5 PRODUCTOS ── -->
+<div class="step" id="step-3">
+  <p class="s-eye">3 de 11 — Catálogo</p>
+  <h2 class="s-title">Top 5 productos o servicios</h2>
+  <p class="s-desc">Los más importantes: los que más vendes, más quieres posicionar o más te interesa impulsar.</p>
+  <div class="fg">
+    <div class="field">
+      <label>Tus 5 productos o servicios principales <span class="req">*</span></label>
+      <span class="micro">Los primeros 3 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="pr1" placeholder="Producto o servicio 1 *"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="pr2" placeholder="Producto o servicio 2 *"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="pr3" placeholder="Producto o servicio 3 *"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="pr4" placeholder="Producto o servicio 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="pr5" placeholder="Producto o servicio 5 (opcional)"></div>
+      </div>
+    </div>
+    <div class="field">
+      <label>¿Tienes catálogo, lista de precios o presentación comercial? <span class="otag">opcional</span></label>
+      <div class="og c2">
+        <label class="olab" data-group="catalog" data-val="Sí, lo puedo compartir"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Sí, lo comparto</label>
+        <label class="olab" data-group="catalog" data-val="Sí, pero desactualizado"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Sí, desactualizado</label>
+        <label class="olab" data-group="catalog" data-val="No tengo"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No tengo</label>
+        <label class="olab" data-group="catalog" data-val="Lo envío después"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Lo envío después</label>
+      </div>
+    </div>
+    <div class="field"><label>Link al catálogo o presentación <span class="otag">opcional</span></label>
+      <input type="url" id="f_catlink" placeholder="https://drive.google.com/..."></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(3)">← Atrás</button><button class="btn-next" onclick="goNext(3)">Siguiente →</button></div>
+</div>
+
+<!-- ── 4: PRODUCTO ESTRELLA 1 ── -->
+<div class="step" id="step-4">
+  <p class="s-eye">4 de 11 — Producto estrella 1</p>
+  <h2 class="s-title">Tu producto o servicio más importante</h2>
+  <p class="s-desc">El que más vendes, más quieres posicionar o más rentabilidad tiene. Vamos fondo.</p>
+  <div class="fg">
+    <div class="field"><label>Nombre del producto o servicio prioritario <span class="req">*</span></label>
+      <input type="text" id="p1n" placeholder="Ej. Plan de Nutrición Mensual Premium"></div>
+    <div class="field"><label>¿Qué es y en qué ayuda? <span class="req">*</span></label>
+      <textarea id="p1d" placeholder="¿Qué hace, qué resuelve o qué resultado obtiene quien lo compra?" rows="3"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>Precio o ticket promedio <span class="req">*</span></label>
+        <input type="text" id="p1p" placeholder="Ej. $1,500 / desde $3,000"></div>
+      <div class="field"><label>Porcentaje de utilidad <span class="otag">opcional</span></label>
+        <input type="text" id="p1m" placeholder="Ej. 40% / Entre 30-50%"></div>
+    </div>
+    <div class="field"><label>Importancia comercial <span class="req">*</span></label>
+      <div class="og c2">
+        <label class="olab" data-group="p1imp" data-val="Es el más importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>El más importante</label>
+        <label class="olab" data-group="p1imp" data-val="Muy importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Muy importante</label>
+        <label class="olab" data-group="p1imp" data-val="Importante pero no el principal"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No es el principal</label>
+        <label class="olab" data-group="p1imp" data-val="Quiero posicionarlo más"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Quiero posicionarlo más</label>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Público objetivo</div><div class="div-l"></div></div>
+    <div class="field"><label>Género <span class="req">*</span></label>
+      <div class="og c4">
+        <label class="olab" data-group="p1g" data-val="Mujeres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Mujeres</label>
+        <label class="olab" data-group="p1g" data-val="Hombres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Hombres</label>
+        <label class="olab" data-group="p1g" data-val="Ambos"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Ambos</label>
+        <label class="olab" data-group="p1g" data-val="Depende del caso"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Depende</label>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Rango de edad <span class="req">*</span></label>
+        <input type="text" id="p1age" placeholder="Ej. 25 a 45 años"></div>
+      <div class="field"><label>Ciudad o zona <span class="req">*</span></label>
+        <input type="text" id="p1city" placeholder="Ej. Xalapa / todo México"></div>
+    </div>
+    <div class="field"><label>Nivel Socioeconómico <span class="req">*</span></label>
+      <span class="micro">Puedes seleccionar más de uno.</span>
+      <div class="og c3" style="margin-top:6px">
+        <label class="olab" data-group="p1nse" data-val="Bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Bajo</label>
+        <label class="olab" data-group="p1nse" data-val="Medio bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio bajo</label>
+        <label class="olab" data-group="p1nse" data-val="Medio" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio</label>
+        <label class="olab" data-group="p1nse" data-val="Medio alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio alto</label>
+        <label class="olab" data-group="p1nse" data-val="Alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Alto</label>
+        <label class="olab" data-group="p1nse" data-val="Premium" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Premium</label>
+      </div>
+    </div>
+    <div class="field"><label>Intereses específicos del público <span class="req">*</span></label>
+      <textarea id="p1int" placeholder="Ej. dueños de negocio, personas interesadas en estética, salud, inversión, maternidad, deporte..." rows="2"></textarea></div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Diferenciadores del producto</div><div class="div-l"></div></div>
+    <div class="field">
+      <label>6 diferenciadores de este producto en particular <span class="req">*</span></label>
+      <span class="micro">Los primeros 3 son obligatorios. Habla de este producto específicamente, no de la empresa en general.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p1d1" placeholder="Diferenciador 1 *"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p1d2" placeholder="Diferenciador 2 *"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p1d3" placeholder="Diferenciador 3 *"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p1d4" placeholder="Diferenciador 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p1d5" placeholder="Diferenciador 5 (opcional)"></div>
+        <div class="nrow"><span class="nnum">6</span><input type="text" id="p1d6" placeholder="Diferenciador 6 (opcional)"></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Dolores del cliente</div><div class="div-l"></div></div>
+    <div class="field">
+      <label>Problemas o frustraciones ANTES de comprar <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios. Ej: "No logro generar ventas con mis redes", "He probado de todo y nada funciona"...</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p1pa1" rows="1" placeholder="Dolor 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p1pa2" rows="1" placeholder="Dolor 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p1pa3" rows="1" placeholder="Dolor 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p1pa4" rows="1" placeholder="Dolor 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p1pa5" rows="1" placeholder="Dolor 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p1pa6" rows="1" placeholder="Dolor 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p1pa7" rows="1" placeholder="Dolor 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p1pa8" rows="1" placeholder="Dolor 8 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">9</span><textarea id="p1pa9" rows="1" placeholder="Dolor 9 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">10</span><textarea id="p1pa10" rows="1" placeholder="Dolor 10 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Deseos del cliente</div><div class="div-l"></div></div>
+    <div class="field">
+      <label>Metas o resultados que quiere lograr al comprar <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios. Ej: "Quiero vender más con mis redes", "Quiero atraer clientes más calificados"...</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p1de1" rows="1" placeholder="Deseo 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p1de2" rows="1" placeholder="Deseo 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p1de3" rows="1" placeholder="Deseo 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p1de4" rows="1" placeholder="Deseo 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p1de5" rows="1" placeholder="Deseo 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p1de6" rows="1" placeholder="Deseo 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p1de7" rows="1" placeholder="Deseo 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p1de8" rows="1" placeholder="Deseo 8 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">9</span><textarea id="p1de9" rows="1" placeholder="Deseo 9 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">10</span><textarea id="p1de10" rows="1" placeholder="Deseo 10 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Objeciones y cierre</div><div class="div-l"></div></div>
+    <div class="field">
+      <label>Razones por las que alguien podría dudar antes de comprar <span class="otag">opcional</span></label>
+      <span class="micro">Ej: "Se me hace caro", "No creo que funcione para mí", "Ya lo intenté antes"...</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p1o1" placeholder="Objeción 1 (opcional)"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p1o2" placeholder="Objeción 2 (opcional)"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p1o3" placeholder="Objeción 3 (opcional)"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p1o4" placeholder="Objeción 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p1o5" placeholder="Objeción 5 (opcional)"></div>
+      </div>
+    </div>
+    <div class="field"><label>Preguntas frecuentes antes de comprar <span class="otag">opcional</span></label>
+      <textarea id="p1faq" placeholder="¿Qué preguntan siempre antes de decidirse?" rows="2"></textarea></div>
+    <div class="field"><label>¿Qué necesita creer o entender una persona para decidir comprar? <span class="otag">opcional</span></label>
+      <textarea id="p1bel" placeholder='Ej. "Necesita entender que publicar bonito no es lo mismo que tener una estrategia de ventas."' rows="2"></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(4)">← Atrás</button><button class="btn-next" onclick="goNext(4)">Siguiente →</button></div>
+</div>
+
+<!-- ── 5: PRODUCTO ESTRELLA 2 ── -->
+<div class="step" id="step-5">
+  <p class="s-eye">5 de 11 — Producto estrella 2</p>
+  <h2 class="s-title">Segundo producto prioritario</h2>
+  <p class="s-desc">El segundo más importante. Misma profundidad.</p>
+  <div class="fg">
+    <div class="field"><label>Nombre <span class="req">*</span></label><input type="text" id="p2n" placeholder="Nombre del producto o servicio"></div>
+    <div class="field"><label>¿Qué es y en qué ayuda? <span class="req">*</span></label><textarea id="p2d" rows="3" placeholder="¿Qué hace, qué resuelve, qué resultado obtiene el cliente?"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>Precio o ticket promedio <span class="req">*</span></label><input type="text" id="p2p" placeholder="Ej. $800 / desde $2,000"></div>
+      <div class="field"><label>Porcentaje de utilidad <span class="otag">opcional</span></label><input type="text" id="p2m" placeholder="Ej. 35%"></div>
+    </div>
+    <div class="field"><label>Importancia comercial <span class="req">*</span></label>
+      <div class="og c2">
+        <label class="olab" data-group="p2imp" data-val="Es el más importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>El más importante</label>
+        <label class="olab" data-group="p2imp" data-val="Muy importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Muy importante</label>
+        <label class="olab" data-group="p2imp" data-val="Importante pero no el principal"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No es el principal</label>
+        <label class="olab" data-group="p2imp" data-val="Quiero posicionarlo más"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Quiero posicionarlo más</label>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Público objetivo</div><div class="div-l"></div></div>
+    <div class="field"><label>Género <span class="req">*</span></label>
+      <div class="og c4">
+        <label class="olab" data-group="p2g" data-val="Mujeres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Mujeres</label>
+        <label class="olab" data-group="p2g" data-val="Hombres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Hombres</label>
+        <label class="olab" data-group="p2g" data-val="Ambos"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Ambos</label>
+        <label class="olab" data-group="p2g" data-val="Depende del caso"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Depende</label>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Rango de edad <span class="req">*</span></label><input type="text" id="p2age" placeholder="Ej. 30 a 50 años"></div>
+      <div class="field"><label>Ciudad o zona <span class="req">*</span></label><input type="text" id="p2city" placeholder="Ej. Veracruz / CDMX"></div>
+    </div>
+    <div class="field"><label>Nivel Socioeconómico <span class="req">*</span></label>
+      <span class="micro">Puedes seleccionar más de uno.</span>
+      <div class="og c3" style="margin-top:6px">
+        <label class="olab" data-group="p2nse" data-val="Bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Bajo</label>
+        <label class="olab" data-group="p2nse" data-val="Medio bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio bajo</label>
+        <label class="olab" data-group="p2nse" data-val="Medio" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio</label>
+        <label class="olab" data-group="p2nse" data-val="Medio alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio alto</label>
+        <label class="olab" data-group="p2nse" data-val="Alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Alto</label>
+        <label class="olab" data-group="p2nse" data-val="Premium" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Premium</label>
+      </div>
+    </div>
+    <div class="field"><label>Intereses específicos del público <span class="req">*</span></label><textarea id="p2int" rows="2" placeholder="Perfiles, comportamientos, intereses específicos..."></textarea></div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Diferenciadores</div><div class="div-l"></div></div>
+    <div class="field"><label>6 diferenciadores de este producto <span class="req">*</span></label>
+      <span class="micro">Los primeros 3 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p2d1" placeholder="Diferenciador 1 *"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p2d2" placeholder="Diferenciador 2 *"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p2d3" placeholder="Diferenciador 3 *"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p2d4" placeholder="Diferenciador 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p2d5" placeholder="Diferenciador 5 (opcional)"></div>
+        <div class="nrow"><span class="nnum">6</span><input type="text" id="p2d6" placeholder="Diferenciador 6 (opcional)"></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Dolores</div><div class="div-l"></div></div>
+    <div class="field"><label>Problemas antes de comprar <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p2pa1" rows="1" placeholder="Dolor 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p2pa2" rows="1" placeholder="Dolor 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p2pa3" rows="1" placeholder="Dolor 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p2pa4" rows="1" placeholder="Dolor 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p2pa5" rows="1" placeholder="Dolor 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p2pa6" rows="1" placeholder="Dolor 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p2pa7" rows="1" placeholder="Dolor 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p2pa8" rows="1" placeholder="Dolor 8 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Deseos</div><div class="div-l"></div></div>
+    <div class="field"><label>Metas que quiere lograr el cliente <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p2de1" rows="1" placeholder="Deseo 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p2de2" rows="1" placeholder="Deseo 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p2de3" rows="1" placeholder="Deseo 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p2de4" rows="1" placeholder="Deseo 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p2de5" rows="1" placeholder="Deseo 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p2de6" rows="1" placeholder="Deseo 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p2de7" rows="1" placeholder="Deseo 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p2de8" rows="1" placeholder="Deseo 8 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Objeciones y cierre</div><div class="div-l"></div></div>
+    <div class="field"><label>Razones para dudar antes de comprar <span class="otag">opcional</span></label>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p2o1" placeholder="Objeción 1 (opcional)"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p2o2" placeholder="Objeción 2 (opcional)"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p2o3" placeholder="Objeción 3 (opcional)"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p2o4" placeholder="Objeción 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p2o5" placeholder="Objeción 5 (opcional)"></div>
+      </div>
+    </div>
+    <div class="field"><label>Preguntas frecuentes antes de comprar <span class="otag">opcional</span></label><textarea id="p2faq" rows="2" placeholder="¿Qué preguntan siempre?"></textarea></div>
+    <div class="field"><label>¿Qué necesita creer para comprar? <span class="otag">opcional</span></label><textarea id="p2bel" rows="2" placeholder="¿Qué creencia desbloquea la compra?"></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(5)">← Atrás</button><button class="btn-next" onclick="goNext(5)">Siguiente →</button></div>
+</div>
+
+<!-- ── 6: PRODUCTO ESTRELLA 3 ── -->
+<div class="step" id="step-6">
+  <p class="s-eye">6 de 11 — Producto estrella 3</p>
+  <h2 class="s-title">Tercer producto prioritario</h2>
+  <p class="s-desc">El tercero más importante. Misma estructura.</p>
+  <div class="fg">
+    <div class="field"><label>Nombre <span class="req">*</span></label><input type="text" id="p3n" placeholder="Nombre del producto o servicio"></div>
+    <div class="field"><label>¿Qué es y en qué ayuda? <span class="req">*</span></label><textarea id="p3d" rows="3" placeholder="¿Qué hace, qué resuelve?"></textarea></div>
+    <div class="row2">
+      <div class="field"><label>Precio o ticket promedio <span class="req">*</span></label><input type="text" id="p3p" placeholder="Ej. $500 / desde $1,200"></div>
+      <div class="field"><label>Porcentaje de utilidad <span class="otag">opcional</span></label><input type="text" id="p3m" placeholder="Ej. 55%"></div>
+    </div>
+    <div class="field"><label>Importancia comercial <span class="req">*</span></label>
+      <div class="og c2">
+        <label class="olab" data-group="p3imp" data-val="Es el más importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>El más importante</label>
+        <label class="olab" data-group="p3imp" data-val="Muy importante"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Muy importante</label>
+        <label class="olab" data-group="p3imp" data-val="Importante pero no el principal"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No es el principal</label>
+        <label class="olab" data-group="p3imp" data-val="Quiero posicionarlo más"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Quiero posicionarlo más</label>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Público objetivo</div><div class="div-l"></div></div>
+    <div class="field"><label>Género <span class="req">*</span></label>
+      <div class="og c4">
+        <label class="olab" data-group="p3g" data-val="Mujeres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Mujeres</label>
+        <label class="olab" data-group="p3g" data-val="Hombres"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Hombres</label>
+        <label class="olab" data-group="p3g" data-val="Ambos"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Ambos</label>
+        <label class="olab" data-group="p3g" data-val="Depende del caso"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Depende</label>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Rango de edad <span class="req">*</span></label><input type="text" id="p3age" placeholder="Ej. 20 a 40 años"></div>
+      <div class="field"><label>Ciudad o zona <span class="req">*</span></label><input type="text" id="p3city" placeholder="Ej. Puebla / zona metro"></div>
+    </div>
+    <div class="field"><label>Nivel Socioeconómico <span class="req">*</span></label>
+      <span class="micro">Puedes seleccionar más de uno.</span>
+      <div class="og c3" style="margin-top:6px">
+        <label class="olab" data-group="p3nse" data-val="Bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Bajo</label>
+        <label class="olab" data-group="p3nse" data-val="Medio bajo" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio bajo</label>
+        <label class="olab" data-group="p3nse" data-val="Medio" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio</label>
+        <label class="olab" data-group="p3nse" data-val="Medio alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medio alto</label>
+        <label class="olab" data-group="p3nse" data-val="Alto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Alto</label>
+        <label class="olab" data-group="p3nse" data-val="Premium" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Premium</label>
+      </div>
+    </div>
+    <div class="field"><label>Intereses específicos del público <span class="req">*</span></label><textarea id="p3int" rows="2" placeholder="Perfiles, comportamientos, intereses..."></textarea></div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Diferenciadores</div><div class="div-l"></div></div>
+    <div class="field"><label>6 diferenciadores de este producto <span class="req">*</span></label>
+      <span class="micro">Los primeros 3 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p3d1" placeholder="Diferenciador 1 *"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p3d2" placeholder="Diferenciador 2 *"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p3d3" placeholder="Diferenciador 3 *"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p3d4" placeholder="Diferenciador 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p3d5" placeholder="Diferenciador 5 (opcional)"></div>
+        <div class="nrow"><span class="nnum">6</span><input type="text" id="p3d6" placeholder="Diferenciador 6 (opcional)"></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Dolores</div><div class="div-l"></div></div>
+    <div class="field"><label>Problemas antes de comprar <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p3pa1" rows="1" placeholder="Dolor 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p3pa2" rows="1" placeholder="Dolor 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p3pa3" rows="1" placeholder="Dolor 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p3pa4" rows="1" placeholder="Dolor 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p3pa5" rows="1" placeholder="Dolor 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p3pa6" rows="1" placeholder="Dolor 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p3pa7" rows="1" placeholder="Dolor 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p3pa8" rows="1" placeholder="Dolor 8 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Deseos</div><div class="div-l"></div></div>
+    <div class="field"><label>Metas que quiere lograr el cliente <span class="req">*</span></label>
+      <span class="micro">Los primeros 5 son obligatorios.</span>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><textarea id="p3de1" rows="1" placeholder="Deseo 1 *"></textarea></div>
+        <div class="nrow"><span class="nnum">2</span><textarea id="p3de2" rows="1" placeholder="Deseo 2 *"></textarea></div>
+        <div class="nrow"><span class="nnum">3</span><textarea id="p3de3" rows="1" placeholder="Deseo 3 *"></textarea></div>
+        <div class="nrow"><span class="nnum">4</span><textarea id="p3de4" rows="1" placeholder="Deseo 4 *"></textarea></div>
+        <div class="nrow"><span class="nnum">5</span><textarea id="p3de5" rows="1" placeholder="Deseo 5 *"></textarea></div>
+        <div class="nrow"><span class="nnum">6</span><textarea id="p3de6" rows="1" placeholder="Deseo 6 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">7</span><textarea id="p3de7" rows="1" placeholder="Deseo 7 (opcional)"></textarea></div>
+        <div class="nrow"><span class="nnum">8</span><textarea id="p3de8" rows="1" placeholder="Deseo 8 (opcional)"></textarea></div>
+      </div>
+    </div>
+    <div class="div"><div class="div-l"></div><div class="div-t">Objeciones y cierre</div><div class="div-l"></div></div>
+    <div class="field"><label>Razones para dudar antes de comprar <span class="otag">opcional</span></label>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="p3o1" placeholder="Objeción 1 (opcional)"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="p3o2" placeholder="Objeción 2 (opcional)"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="p3o3" placeholder="Objeción 3 (opcional)"></div>
+        <div class="nrow"><span class="nnum">4</span><input type="text" id="p3o4" placeholder="Objeción 4 (opcional)"></div>
+        <div class="nrow"><span class="nnum">5</span><input type="text" id="p3o5" placeholder="Objeción 5 (opcional)"></div>
+      </div>
+    </div>
+    <div class="field"><label>Preguntas frecuentes antes de comprar <span class="otag">opcional</span></label><textarea id="p3faq" rows="2" placeholder="¿Qué preguntan siempre?"></textarea></div>
+    <div class="field"><label>¿Qué necesita creer para comprar? <span class="otag">opcional</span></label><textarea id="p3bel" rows="2" placeholder="¿Qué creencia desbloquea la compra?"></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(6)">← Atrás</button><button class="btn-next" onclick="goNext(6)">Siguiente →</button></div>
+</div>
+
+<!-- ── 7: PROCESO DE COMPRA ── -->
+<div class="step" id="step-7">
+  <p class="s-eye">7 de 11 — Proceso de compra</p>
+  <h2 class="s-title">¿Qué quieres que haga el cliente?</h2>
+  <p class="s-desc">La acción que buscamos que tome la persona cuando vea tu anuncio o contenido define toda la estrategia de CTA.</p>
+  <div class="fg">
+    <div class="field">
+      <label>¿Qué acción quieres que tome el cliente al verte? <span class="req">*</span></label>
+      <span class="micro">Selecciona las que apliquen. Esto define el llamado a la acción de tus anuncios.</span>
+      <div class="og" style="margin-top:8px">
+        <label class="olab" data-group="cta" data-val="Enviarte un mensaje por WhatsApp" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Mensaje WhatsApp</label>
+        <label class="olab" data-group="cta" data-val="Agendar una cita" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Agendar cita</label>
+        <label class="olab" data-group="cta" data-val="Hacer una reservación" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Hacer reservación</label>
+        <label class="olab" data-group="cta" data-val="Comprar directamente en línea" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Compra en línea</label>
+        <label class="olab" data-group="cta" data-val="Visitar la sucursal o punto físico" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Visitar sucursal</label>
+        <label class="olab" data-group="cta" data-val="Llamar por teléfono" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Llamar</label>
+        <label class="olab" data-group="cta" data-val="Llenar un formulario de contacto" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Llenar formulario</label>
+        <label class="olab" data-group="cta" data-val="Agendar una videollamada o consulta gratis" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Videollamada / consulta</label>
+      </div>
+    </div>
+    <div class="field"><label>Describe el proceso desde que alguien te contacta hasta que compra <span class="req">*</span></label>
+      <textarea id="f_process" placeholder='Ej. "Escribe por WhatsApp → le enviamos info → agenda una llamada → cerramos la venta."' rows="4"></textarea></div>
+    <div class="field">
+      <label>¿Cuánto tarda una persona en decidir comprar?</label>
+      <div class="og c2">
+        <label class="olab" data-group="dtime" data-val="El mismo día"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>El mismo día</label>
+        <label class="olab" data-group="dtime" data-val="1 a 3 días"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>1 a 3 días</label>
+        <label class="olab" data-group="dtime" data-val="Una semana"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Una semana</label>
+        <label class="olab" data-group="dtime" data-val="2 semanas a 1 mes"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>2 sem – 1 mes</label>
+        <label class="olab" data-group="dtime" data-val="Más de un mes"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Más de un mes</label>
+        <label class="olab" data-group="dtime" data-val="Depende del producto"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Depende</label>
+      </div>
+    </div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(7)">← Atrás</button><button class="btn-next" onclick="goNext(7)">Siguiente →</button></div>
+</div>
+
+<!-- ── 8: PRUEBAS DE CONFIANZA ── -->
+<div class="step" id="step-8">
+  <p class="s-eye">8 de 11 — Pruebas de confianza</p>
+  <h2 class="s-title">Tu evidencia social</h2>
+  <p class="s-desc">Las pruebas que tienes son el activo más valioso en cualquier estrategia. Sé honesto con lo que hay.</p>
+  <div class="fg">
+    <div class="field">
+      <label>¿Con qué pruebas de confianza cuentas? <span class="otag">opcional</span></label>
+      <div class="og">
+        <label class="olab" data-group="proof" data-val="Testimonios" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Testimonios</label>
+        <label class="olab" data-group="proof" data-val="Reseñas de Google" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Reseñas Google</label>
+        <label class="olab" data-group="proof" data-val="Reseñas de Facebook" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Reseñas Facebook</label>
+        <label class="olab" data-group="proof" data-val="Capturas de WhatsApp" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Capturas WA</label>
+        <label class="olab" data-group="proof" data-val="Antes y después" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Antes y después</label>
+        <label class="olab" data-group="proof" data-val="Casos de éxito" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Casos de éxito</label>
+        <label class="olab" data-group="proof" data-val="Fotos de trabajos" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Fotos de trabajos</label>
+        <label class="olab" data-group="proof" data-val="Videos de clientes" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Videos de clientes</label>
+        <label class="olab" data-group="proof" data-val="Resultados medibles" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Resultados medibles</label>
+        <label class="olab" data-group="proof" data-val="Certificaciones" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Certificaciones</label>
+        <label class="olab" data-group="proof" data-val="Apariciones en medios" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Medios</label>
+        <label class="olab" data-group="proof" data-val="No cuento con pruebas aún" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No tengo aún</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>¿Puedes compartirnos esas pruebas? <span class="otag">opcional</span></label>
+      <div class="og c2">
+        <label class="olab" data-group="shareproof" data-val="Sí, los comparto"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Sí, los comparto</label>
+        <label class="olab" data-group="shareproof" data-val="Necesito recopilarlos"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Necesito recopilarlos</label>
+        <label class="olab" data-group="shareproof" data-val="Algunos sí"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Algunos sí</label>
+        <label class="olab" data-group="shareproof" data-val="No por ahora"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>No por ahora</label>
+      </div>
+    </div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(8)">← Atrás</button><button class="btn-next" onclick="goNext(8)">Siguiente →</button></div>
+</div>
+
+<!-- ── 9: COMPETIDORES (OPCIONAL) ── -->
+<div class="step" id="step-9">
+  <p class="s-eye">9 de 11 — Competencia <span class="otag">sección opcional</span></p>
+  <h2 class="s-title">Tu competencia directa</h2>
+  <p class="s-desc">Si no quieres responder esta sección, puedes avanzar directamente. Toda la información aquí es opcional.</p>
+  <div class="fg">
+    <div class="field">
+      <label>Tus 3 competidores directos principales <span class="otag">opcional</span></label>
+      <div class="nf">
+        <div class="nrow"><span class="nnum">1</span><input type="text" id="c1" placeholder="Competidor 1"></div>
+        <div class="nrow"><span class="nnum">2</span><input type="text" id="c2" placeholder="Competidor 2"></div>
+        <div class="nrow"><span class="nnum">3</span><input type="text" id="c3" placeholder="Competidor 3"></div>
+      </div>
+    </div>
+    <div class="field"><label>¿Qué crees que ellos hacen bien? <span class="otag">opcional</span></label>
+      <textarea id="f_cgood" rows="3" placeholder="¿En qué te gana tu competencia?"></textarea></div>
+    <div class="field"><label>¿Qué crees que tú haces mejor? <span class="otag">opcional</span></label>
+      <textarea id="f_cbetter" rows="3" placeholder="Tu ventaja real frente a ellos."></textarea></div>
+    <div class="field"><label>¿Qué NO quieres parecer en tu comunicación? <span class="otag">opcional</span></label>
+      <textarea id="f_cdont" rows="2" placeholder="Estilos, tonos o formas de vender que no te representan."></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(9)">← Atrás</button><button class="btn-next" onclick="goNext(9)">Siguiente →</button></div>
+</div>
+
+<!-- ── 10: OBJETIVO DE MARKETING ── -->
+<div class="step" id="step-10">
+  <p class="s-eye">10 de 11 — Objetivo de marketing</p>
+  <h2 class="s-title">¿A dónde vamos?</h2>
+  <p class="s-desc">Define el resultado que quieres lograr. Con esto construimos la estrategia correcta.</p>
+  <div class="fg">
+    <div class="field">
+      <label>Objetivo principal de marketing <span class="req">*</span></label>
+      <div class="og">
+        <label class="olab" data-group="goal" data-multi="1" data-val="Más mensajes por WhatsApp"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Más mensajes WA</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Conseguir más citas o reservaciones"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Más citas / reservas</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Conseguir más ventas directas"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Más ventas</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Aumentar posicionamiento de marca"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Posicionamiento</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Atraer clientes de mayor poder adquisitivo"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Clientes premium</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Lanzar un nuevo producto o servicio"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Lanzar producto</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Mejorar la imagen de la marca"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Mejorar imagen</label>
+        <label class="olab" data-group="goal" data-val="Diferenciarnos de la competencia" data-multi="1"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Diferenciarnos</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Generar comunidad o seguidores"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Generar comunidad</label>
+        <label class="olab" data-group="goal" data-multi="1" data-val="Recuperar clientes anteriores"><span class="ochk"><svg viewBox="0 0 10 8" fill="none" stroke="#fff" stroke-width="2"><polyline points="1 4 4 7 9 1"/></svg></span>Recuperar clientes</label>
+      </div>
+    </div>
+    <div class="field"><label>¿Cuál sería un resultado exitoso en los próximos 30, 60 o 90 días? <span class="req">*</span></label>
+      <textarea id="f_success" rows="4" placeholder='Sé concreto. Ej. "Recibir 50 prospectos calificados", "Vender 20 paquetes", "Llenar agenda"...'></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(10)">← Atrás</button><button class="btn-next" onclick="goNext(10)">Siguiente →</button></div>
+</div>
+
+<!-- 11: COMENTARIOS FINALES -->
+<div class="step" id="step-11">
+  <p class="s-eye">11 de 11 — Cierre</p>
+  <h2 class="s-title">Lo que no te preguntamos</h2>
+  <p class="s-desc">Espacio libre para todo lo que no cubrimos pero que sea importante para tu estrategia.</p>
+  <div class="fg">
+    <div class="field"><label>¿Hay algo más que debamos saber? <span class="otag">opcional</span></label>
+      <textarea id="f_extra" rows="5" placeholder="Contexto adicional, particularidades, temporalidades, restricciones, historia relevante..."></textarea></div>
+  </div>
+  <div class="snav"><button class="btn-back" onclick="goBack(11)">← Atrás</button><button class="btn-next" id="submitBtn" onclick="submitForm()">Generar PDF ↓</button></div>
+</div>
+</main>
+
+<!-- SUCCESS -->
+<div class="success" id="successScreen">
+  <div class="sico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <h2 class="stt">¡Diagnóstico listo! 🔥</h2>
+  <p class="ssb">Tu antología de marca está completa. Descarga el PDF y compártelo con el equipo de Bravo para arrancar con tu estrategia.</p>
+  <button class="btn-pdf" id="pdfBtn" onclick="downloadPDF()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Descargar PDF
+  </button>
+  <p class="scls">"Gracias por compartir esta información. Con tus respuestas podremos analizar mejor tu marca y preparar una estrategia más clara, precisa y enfocada en resultados."</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.olab').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var group = el.dataset.group;
+      var multi = el.dataset.multi === '1';
+      if (multi) {
+        el.classList.toggle('sel');
+      } else {
+        document.querySelectorAll('.olab[data-group="' + group + '"]').forEach(function(o){ o.classList.remove('sel'); });
+        el.classList.add('sel');
+      }
+    });
+  });
+});
+
+// ══════════════════════════════════════════
+//  CONFIG EMAILJS — REEMPLAZA ESTOS 3 VALORES
+// ══════════════════════════════════════════
+const EMAILJS_SERVICE_ID  = 'TU_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'TU_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY  = 'TU_PUBLIC_KEY';
+const NOTIFY_EMAIL        = 'modbon379@gmail.com';
+const TOTAL = 11;
+let cur = 1;
+function v(id) { var el=document.getElementById(id); return el?el.value.trim():''; }
+function getR(g) { var el=document.querySelector('.olab.sel[data-group="'+g+'"]'); return el?el.dataset.val:''; }
+function getM(g) { var els=document.querySelectorAll('.olab.sel[data-group="'+g+'"]'),r=[]; els.forEach(function(e){r.push(e.dataset.val);}); return r.join(', '); }
+function nl(ids) { return ids.map(function(id,i){var t=v(id);return t?(i+1)+'. '+t:'';}).filter(Boolean).join('\n'); }
+
+function startForm(){ document.getElementById('introScreen').style.display='none'; document.getElementById('formMain').style.display='block'; updateProg(); }
+function showStep(n){ document.querySelectorAll('.step').forEach(function(s){s.classList.remove('active');}); var t=document.getElementById('step-'+n); if(t){t.classList.add('active');cur=n;updateProg();window.scrollTo({top:0,behavior:'smooth'});} }
+function goNext(s){ if(validate(s))showStep(s+1); }
+function goBack(s){ showStep(s-1); }
+function updateProg(){ var pct=Math.round(((cur-1)/TOTAL)*100); document.getElementById('pb').style.width=pct+'%'; document.getElementById('hdrS').textContent=cur+' / '+TOTAL; document.getElementById('hdrP').textContent=pct>0?pct+'%':''; }
+
+var reqMap={
+  1:['f_brand','f_founder','f_years','f_clients','f_value','f_wa'],
+  2:['f_why','d1','d2','d3'],
+  3:['pr1','pr2','pr3'],
+  4:['p1n','p1d','p1p','p1age','p1city','p1int','p1d1','p1d2','p1d3','p1pa1','p1pa2','p1pa3','p1pa4','p1pa5','p1de1','p1de2','p1de3','p1de4','p1de5'],
+  5:['p2n','p2d','p2p','p2age','p2city','p2int','p2d1','p2d2','p2d3','p2pa1','p2pa2','p2pa3','p2pa4','p2pa5','p2de1','p2de2','p2de3','p2de4','p2de5'],
+  6:['p3n','p3d','p3p','p3age','p3city','p3int','p3d1','p3d2','p3d3','p3pa1','p3pa2','p3pa3','p3pa4','p3pa5','p3de1','p3de2','p3de3','p3de4','p3de5'],
+  7:['f_process'],8:[],9:[],10:['f_success'],11:[]
+};
+var reqRadio={
+  4:[{g:'p1imp',l:'Importancia P1'},{g:'p1g',l:'Género P1'},{g:'p1nse',l:'NSE P1',multi:true}],
+  5:[{g:'p2imp',l:'Importancia P2'},{g:'p2g',l:'Género P2'},{g:'p2nse',l:'NSE P2',multi:true}],
+  6:[{g:'p3imp',l:'Importancia P3'},{g:'p3g',l:'Género P3'},{g:'p3nse',l:'NSE P3',multi:true}],
+  10:[{g:'goal',l:'Objetivo de marketing',multi:true}]
+};
+var labels={f_brand:'Nombre de la marca',f_founder:'Nombre del fundador',f_years:'Antigüedad',f_clients:'Clientes atendidos',f_value:'Propuesta de valor',f_wa:'WhatsApp',f_why:'Por qué comprarte',d1:'Diferenciador 1',d2:'Diferenciador 2',d3:'Diferenciador 3',pr1:'Producto 1',pr2:'Producto 2',pr3:'Producto 3',p1n:'Nombre P1',p1d:'Descripción P1',p1p:'Precio P1',p1age:'Edad P1',p1city:'Ciudad P1',p1int:'Intereses P1',p1d1:'Diferenciador 1 P1',p1d2:'Diferenciador 2 P1',p1d3:'Diferenciador 3 P1',p1pa1:'Dolor 1 P1',p1pa2:'Dolor 2 P1',p1pa3:'Dolor 3 P1',p1pa4:'Dolor 4 P1',p1pa5:'Dolor 5 P1',p1de1:'Deseo 1 P1',p1de2:'Deseo 2 P1',p1de3:'Deseo 3 P1',p1de4:'Deseo 4 P1',p1de5:'Deseo 5 P1',p2n:'Nombre P2',p2d:'Descripción P2',p2p:'Precio P2',p2age:'Edad P2',p2city:'Ciudad P2',p2int:'Intereses P2',p2d1:'Diferenciador 1 P2',p2d2:'Diferenciador 2 P2',p2d3:'Diferenciador 3 P2',p2pa1:'Dolor 1 P2',p2pa2:'Dolor 2 P2',p2pa3:'Dolor 3 P2',p2pa4:'Dolor 4 P2',p2pa5:'Dolor 5 P2',p2de1:'Deseo 1 P2',p2de2:'Deseo 2 P2',p2de3:'Deseo 3 P2',p2de4:'Deseo 4 P2',p2de5:'Deseo 5 P2',p3n:'Nombre P3',p3d:'Descripción P3',p3p:'Precio P3',p3age:'Edad P3',p3city:'Ciudad P3',p3int:'Intereses P3',p3d1:'Diferenciador 1 P3',p3d2:'Diferenciador 2 P3',p3d3:'Diferenciador 3 P3',p3pa1:'Dolor 1 P3',p3pa2:'Dolor 2 P3',p3pa3:'Dolor 3 P3',p3pa4:'Dolor 4 P3',p3pa5:'Dolor 5 P3',p3de1:'Deseo 1 P3',p3de2:'Deseo 2 P3',p3de3:'Deseo 3 P3',p3de4:'Deseo 4 P3',p3de5:'Deseo 5 P3',f_process:'Proceso de compra',f_success:'Resultado exitoso'};
+
+function validate(step){
+  var fields=reqMap[step]||[];
+  for(var i=0;i<fields.length;i++){
+    if(!v(fields[i])){ showToast('Completa: '+(labels[fields[i]]||fields[i]),true); var el=document.getElementById(fields[i]); if(el)el.focus(); return false; }
+  }
+  var radios=reqRadio[step]||[];
+  for(var j=0;j<radios.length;j++){
+    var r=radios[j];
+    if(r.multi){if(!getM(r.g)){showToast('Selecciona al menos uno: '+r.l,true);return false;}}
+    else{if(!getR(r.g)){showToast('Selecciona: '+r.l,true);return false;}}
+  }
+  return true;
+}
+
+function submitForm(){
+  if(!validate(11))return;
+
+  var btn=document.getElementById('submitBtn');
+  btn.textContent='Enviando...';
+  btn.style.pointerEvents='none';
+
+  // Recopilar toda la info en texto para Formspree
+  var brand=v('f_brand')||'Cliente';
+  var data={
+    '_subject': 'Nuevo Diagnóstico Bravo — '+brand,
+    'Empresa': v('f_brand'),
+    'Fundador': v('f_founder'),
+    'WhatsApp': v('f_wa'),
+    'Años': v('f_years'),
+    'Clientes': v('f_clients'),
+    'Ubicación': v('f_loc'),
+    'Redes': v('f_social'),
+    'Propuesta de valor': v('f_value'),
+    'Por qué comprarte': v('f_why'),
+    'Diferenciadores generales': [v('d1'),v('d2'),v('d3'),v('d4'),v('d5'),v('d6')].filter(Boolean).join(' | '),
+    'Top productos': [v('pr1'),v('pr2'),v('pr3'),v('pr4'),v('pr5')].filter(Boolean).join(' | '),
+    'Catálogo': getR('catalog'),
+    'Link catálogo': v('f_catlink'),
+    // Producto 1
+    'P1 Nombre': v('p1n'),
+    'P1 Descripción': v('p1d'),
+    'P1 Precio': v('p1p'),
+    'P1 Utilidad': v('p1m'),
+    'P1 Importancia': getR('p1imp'),
+    'P1 Género': getR('p1g'),
+    'P1 Edad': v('p1age'),
+    'P1 Ciudad': v('p1city'),
+    'P1 NSE': getM('p1nse'),
+    'P1 Intereses': v('p1int'),
+    'P1 Diferenciadores': [v('p1d1'),v('p1d2'),v('p1d3'),v('p1d4'),v('p1d5'),v('p1d6')].filter(Boolean).join(' | '),
+    'P1 Dolores': [v('p1pa1'),v('p1pa2'),v('p1pa3'),v('p1pa4'),v('p1pa5'),v('p1pa6'),v('p1pa7'),v('p1pa8'),v('p1pa9'),v('p1pa10')].filter(Boolean).join(' | '),
+    'P1 Deseos': [v('p1de1'),v('p1de2'),v('p1de3'),v('p1de4'),v('p1de5'),v('p1de6'),v('p1de7'),v('p1de8'),v('p1de9'),v('p1de10')].filter(Boolean).join(' | '),
+    'P1 Objeciones': [v('p1o1'),v('p1o2'),v('p1o3'),v('p1o4'),v('p1o5')].filter(Boolean).join(' | '),
+    'P1 FAQ': v('p1faq'),
+    'P1 Creencia': v('p1bel'),
+    // Producto 2
+    'P2 Nombre': v('p2n'),
+    'P2 Descripción': v('p2d'),
+    'P2 Precio': v('p2p'),
+    'P2 Utilidad': v('p2m'),
+    'P2 Importancia': getR('p2imp'),
+    'P2 Género': getR('p2g'),
+    'P2 Edad': v('p2age'),
+    'P2 Ciudad': v('p2city'),
+    'P2 NSE': getM('p2nse'),
+    'P2 Intereses': v('p2int'),
+    'P2 Diferenciadores': [v('p2d1'),v('p2d2'),v('p2d3'),v('p2d4'),v('p2d5'),v('p2d6')].filter(Boolean).join(' | '),
+    'P2 Dolores': [v('p2pa1'),v('p2pa2'),v('p2pa3'),v('p2pa4'),v('p2pa5'),v('p2pa6'),v('p2pa7'),v('p2pa8')].filter(Boolean).join(' | '),
+    'P2 Deseos': [v('p2de1'),v('p2de2'),v('p2de3'),v('p2de4'),v('p2de5'),v('p2de6'),v('p2de7'),v('p2de8')].filter(Boolean).join(' | '),
+    'P2 Objeciones': [v('p2o1'),v('p2o2'),v('p2o3'),v('p2o4'),v('p2o5')].filter(Boolean).join(' | '),
+    'P2 FAQ': v('p2faq'),
+    'P2 Creencia': v('p2bel'),
+    // Producto 3
+    'P3 Nombre': v('p3n'),
+    'P3 Descripción': v('p3d'),
+    'P3 Precio': v('p3p'),
+    'P3 Utilidad': v('p3m'),
+    'P3 Importancia': getR('p3imp'),
+    'P3 Género': getR('p3g'),
+    'P3 Edad': v('p3age'),
+    'P3 Ciudad': v('p3city'),
+    'P3 NSE': getM('p3nse'),
+    'P3 Intereses': v('p3int'),
+    'P3 Diferenciadores': [v('p3d1'),v('p3d2'),v('p3d3'),v('p3d4'),v('p3d5'),v('p3d6')].filter(Boolean).join(' | '),
+    'P3 Dolores': [v('p3pa1'),v('p3pa2'),v('p3pa3'),v('p3pa4'),v('p3pa5'),v('p3pa6'),v('p3pa7'),v('p3pa8')].filter(Boolean).join(' | '),
+    'P3 Deseos': [v('p3de1'),v('p3de2'),v('p3de3'),v('p3de4'),v('p3de5'),v('p3de6'),v('p3de7'),v('p3de8')].filter(Boolean).join(' | '),
+    'P3 Objeciones': [v('p3o1'),v('p3o2'),v('p3o3'),v('p3o4'),v('p3o5')].filter(Boolean).join(' | '),
+    'P3 FAQ': v('p3faq'),
+    'P3 Creencia': v('p3bel'),
+    // Resto
+    'CTA deseado': getM('cta'),
+    'Proceso de compra': v('f_process'),
+    'Tiempo de decisión': getR('dtime'),
+    'Pruebas de confianza': getM('proof'),
+    'Puede compartir pruebas': getR('shareproof'),
+    'Competidor 1': v('c1'),
+    'Competidor 2': v('c2'),
+    'Competidor 3': v('c3'),
+    'Competencia hace bien': v('f_cgood'),
+    'En qué eres mejor': v('f_cbetter'),
+    'No quiere parecer': v('f_cdont'),
+    'Objetivo de marketing': getM('goal'),
+    'Resultado en 90 días': v('f_success'),
+    'Comentarios finales': v('f_extra')
+  };
+
+  fetch('https://formspree.io/f/xwvjdnww', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(result){
+    if(result.ok || result.next){
+      // Éxito
+      document.getElementById('formMain').style.display='none';
+      document.getElementById('pb').style.width='100%';
+      document.getElementById('hdrS').textContent='Completado ✓';
+      document.getElementById('hdrP').textContent='100%';
+      document.getElementById('successScreen').classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    } else {
+      throw new Error(result.error||'Error desconocido');
+    }
+  })
+  .catch(function(err){
+    console.error('Formspree error:',err);
+    // Aunque falle el correo, dejamos al cliente ver la pantalla de éxito
+    // para que pueda descargar su PDF igualmente
+    document.getElementById('formMain').style.display='none';
+    document.getElementById('pb').style.width='100%';
+    document.getElementById('hdrS').textContent='Completado ✓';
+    document.getElementById('hdrP').textContent='100%';
+    document.getElementById('successScreen').classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+    showToast('Info guardada. Hubo un problema al enviar el correo.',true);
+  });
+}
+
+function downloadPDF(){
+  var btn=document.getElementById('pdfBtn');
+  btn.textContent='Generando PDF...';
+  btn.style.pointerEvents='none';
+  try{
+    var jsPDF=window.jspdf.jsPDF;
+    var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var brand=v('f_brand')||'Cliente';
+    var ts=new Date().toLocaleString('es-MX',{timeZone:'America/Mexico_City'});
+    var PW=210,MX=14,CW=196,y=0;
+    var BK=[13,13,13],RD=[255,0,0],G1=[30,30,30],G2=[100,100,100],LG=[220,220,220],WH=[255,255,255];
+
+    function newPage(){
+      doc.addPage(); y=18;
+      doc.setFillColor(...BK); doc.rect(0,0,PW,10,'F');
+      doc.setFillColor(...RD); doc.rect(0,0,4,10,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...WH);
+      doc.text('BRAVO. — '+brand.toUpperCase(),MX+4,6.5);
+      doc.setTextColor(...G2); doc.text(ts,PW-MX,6.5,{align:'right'});
+    }
+    function chk(n){if(y+n>280)newPage();}
+    function sec(t){
+      chk(14); doc.setFillColor(...RD); doc.rect(MX,y,CW,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...WH);
+      doc.text(t.toUpperCase(),MX+4,y+5.5); y+=12;
+    }
+    function sub(t){
+      chk(9); doc.setFillColor(...G1); doc.rect(MX,y,CW,6,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...LG);
+      doc.text(t,MX+3,y+4.2); y+=9;
+    }
+    function fld(label,value,ind){
+      if(!value)return; ind=ind||0; chk(8);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...G2);
+      doc.text(label+':',MX+ind,y);
+      doc.setFont('helvetica','normal'); doc.setTextColor(...BK);
+      var lines=doc.splitTextToSize(value,CW-ind-4);
+      var need=lines.length*4.5+6; chk(need);
+      doc.text(lines,MX+ind,y+4.5); y+=need;
+    }
+    function lst(label,ids,ind){
+      var vals=ids.map(function(id,i){var t=v(id);return t?(i+1)+'. '+t:'';}).filter(Boolean);
+      if(!vals.length)return;
+      fld(label||'',vals.join('\n'),ind);
+    }
+
+    // COVER
+    doc.setFillColor(...BK); doc.rect(0,0,PW,297,'F');
+    doc.setFillColor(...RD); doc.rect(0,0,6,297,'F'); doc.rect(0,260,PW,37,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...G2); doc.text('BRAVO AGENCIA',MX+8,38);
+    doc.setFontSize(26); doc.setTextColor(...WH); doc.text('DIAGNÓSTICO',MX+8,56);
+    doc.setTextColor(...RD); doc.text('ESTRATÉGICO',MX+8,70);
+    doc.setDrawColor(...RD); doc.setLineWidth(0.8); doc.line(MX+8,77,MX+68,77);
+    doc.setFontSize(14); doc.setTextColor(...WH); doc.text(brand,MX+8,88);
+    doc.setFontSize(8); doc.setTextColor(...G2); doc.text('Generado: '+ts,MX+8,97);
+    doc.setFontSize(8); doc.setTextColor(...WH); doc.text('bravo-crm-lite.web.app',MX+8,268); doc.text('Documento confidencial',MX+8,274);
+
+    newPage();
+
+    sec('1. Información general');
+    fld('Empresa / Marca',v('f_brand')); fld('Fundador / Rostro',v('f_founder'));
+    fld('Años de antigüedad',v('f_years')); fld('Clientes atendidos',v('f_clients'));
+    fld('WhatsApp',v('f_wa')); fld('Ubicación',v('f_loc')); fld('Redes / Web',v('f_social'));
+    fld('Propuesta de valor',v('f_value')); y+=4;
+
+    sec('2. Diferenciación general');
+    fld('¿Por qué comprarte?',v('f_why'));
+    lst('Diferenciadores',['d1','d2','d3','d4','d5','d6']); y+=4;
+
+    sec('3. Top 5 productos o servicios');
+    lst('Productos / Servicios',['pr1','pr2','pr3','pr4','pr5']);
+    fld('Catálogo',getR('catalog')); fld('Link catálogo',v('f_catlink')); y+=4;
+
+    function prodSection(num, pn, pd, pp, pm, pimp, pg, page, pcity, pnse, pint, diffs, pains, desires, objs, faq, bel) {
+      sec(num+'. Producto estrella '+(num-3)+' — '+(v(pn)||''));
+      fld('Nombre',v(pn)); fld('¿Qué es y en qué ayuda?',v(pd));
+      fld('Precio / Ticket promedio',v(pp)); fld('Porcentaje de utilidad',v(pm));
+      fld('Importancia comercial',getR(pimp));
+      sub('Público objetivo');
+      fld('Género',getR(pg),4); fld('Rango de edad',v(page),4);
+      fld('Ciudad o zona',v(pcity),4); fld('Nivel socioeconómico',getM(pnse),4);
+      fld('Intereses del público',v(pint),4);
+      sub('Diferenciadores del producto'); lst('',diffs,4);
+      sub('Dolores del cliente'); lst('',pains,4);
+      sub('Deseos del cliente'); lst('',desires,4);
+      sub('Objeciones'); lst('',objs,4);
+      fld('Preguntas frecuentes',v(faq)); fld('¿Qué necesita creer?',v(bel)); y+=4;
+    }
+
+    prodSection(4,'p1n','p1d','p1p','p1m','p1imp','p1g','p1age','p1city','p1nse','p1int',
+      ['p1d1','p1d2','p1d3','p1d4','p1d5','p1d6'],
+      ['p1pa1','p1pa2','p1pa3','p1pa4','p1pa5','p1pa6','p1pa7','p1pa8','p1pa9','p1pa10'],
+      ['p1de1','p1de2','p1de3','p1de4','p1de5','p1de6','p1de7','p1de8','p1de9','p1de10'],
+      ['p1o1','p1o2','p1o3','p1o4','p1o5'],'p1faq','p1bel');
+
+    prodSection(5,'p2n','p2d','p2p','p2m','p2imp','p2g','p2age','p2city','p2nse','p2int',
+      ['p2d1','p2d2','p2d3','p2d4','p2d5','p2d6'],
+      ['p2pa1','p2pa2','p2pa3','p2pa4','p2pa5','p2pa6','p2pa7','p2pa8'],
+      ['p2de1','p2de2','p2de3','p2de4','p2de5','p2de6','p2de7','p2de8'],
+      ['p2o1','p2o2','p2o3','p2o4','p2o5'],'p2faq','p2bel');
+
+    prodSection(6,'p3n','p3d','p3p','p3m','p3imp','p3g','p3age','p3city','p3nse','p3int',
+      ['p3d1','p3d2','p3d3','p3d4','p3d5','p3d6'],
+      ['p3pa1','p3pa2','p3pa3','p3pa4','p3pa5','p3pa6','p3pa7','p3pa8'],
+      ['p3de1','p3de2','p3de3','p3de4','p3de5','p3de6','p3de7','p3de8'],
+      ['p3o1','p3o2','p3o3','p3o4','p3o5'],'p3faq','p3bel');
+
+    sec('7. Proceso de compra');
+    fld('Acción que quieres del cliente (CTA)',getM('cta'));
+    fld('Proceso hasta la venta',v('f_process'));
+    fld('Tiempo de decisión',getR('dtime')); y+=4;
+
+    sec('8. Pruebas de confianza');
+    fld('Pruebas disponibles',getM('proof'));
+    fld('¿Puede compartirlas?',getR('shareproof')); y+=4;
+
+    sec('9. Competencia (opcional)');
+    lst('Competidores',['c1','c2','c3']);
+    fld('¿Qué hacen bien?',v('f_cgood'));
+    fld('¿En qué eres mejor?',v('f_cbetter'));
+    fld('¿Qué NO quieres parecer?',v('f_cdont')); y+=4;
+
+    sec('10. Objetivo de marketing');
+    fld('Objetivo principal',getR('goal'));
+    fld('Resultado en 30-60-90 días',v('f_success')); y+=4;
+
+    sec('11. Comentarios finales');
+    fld('Contexto adicional',v('f_extra')||'(Sin comentarios adicionales)');
+
+    var safe=(v('f_brand')||'Cliente').replace(/[^a-zA-Z0-9_\-]/g,'_').substring(0,30);
+    var fileName='Bravo_Diagnostico_'+safe+'.pdf';
+
+    // 1) Descarga el PDF en el dispositivo del cliente — esto SIEMPRE funciona
+    doc.save(fileName);
+    btn.innerHTML='✓ Descargado';
+    btn.style.background='#1a6b1a';
+    btn.style.pointerEvents='auto';
+
+
+  } catch(err){
+    console.error(err);
+    btn.textContent='Error — intenta de nuevo';
+    btn.style.pointerEvents='auto';
+    showToast('Error PDF: '+err.message,true);
+  }
+}
+
+// ═══════════════════════════════════════════
+//   ENVÍO DE COPIA POR CORREO (EmailJS)
+//   Best-effort: si falla, el PDF ya se descargó
+//   y el cliente puede reenviarlo manualmente.
+// ═══════════════════════════════════════════
+function sendPdfByEmail(doc, fileName, brand) {
+  if (!window.emailjs || EMAILJS_SERVICE_ID === 'TU_SERVICE_ID') {
+    console.warn('EmailJS no está configurado todavía. Saltando envío de correo.');
+    return;
+  }
+  try {
+    // jsPDF puede generar el archivo en base64 puro (sin el prefijo data:)
+    var base64Pdf = doc.output('datauristring').split(',')[1];
+
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: NOTIFY_EMAIL,
+      brand_name: brand,
+      founder: v('f_founder'),
+      whatsapp: v('f_wa'),
+      submitted_at: new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+      pdf_attachment: base64Pdf,
+      pdf_filename: fileName
+    }).then(function() {
+      showToast('Copia enviada a Bravo por correo ✓');
+    }).catch(function(err) {
+      console.error('EmailJS error:', err);
+      // No mostramos error al cliente — su PDF ya se descargó correctamente.
+      // Esto es solo una copia adicional para el administrador.
+    });
+  } catch(e) {
+    console.error('Error preparando envío de correo:', e);
+  }
+}
+
+function showToast(msg,isErr){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(isErr?' err':'');
+  setTimeout(function(){t.className='toast';},3200);
+}
+</script>
+</body>
+</html>
